@@ -1,0 +1,86 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/UI-Library/main/UI-Library.lua"))()
+local Window = Library:CreateWindow("Voidy Hub - Auto Bounty V4")
+
+local MainTab = Window:CreateFolder("Main")
+local PlayerTab = Window:CreateFolder("Player")
+local SettingsTab = Window:CreateFolder("Settings")
+
+_G.AutoFarm = false
+_G.SafeZone = true
+_G.AutoGacha = true
+
+function IsInSafeZone()
+    local player = game.Players.LocalPlayer
+    local healthPercent = (player.Character.Humanoid.Health / player.Character.Humanoid.MaxHealth) * 100
+    return healthPercent <= 25
+end
+
+function AttackPlayer(target)
+    local character = game.Players.LocalPlayer.Character
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    local targetRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+
+    if rootPart and targetRoot then
+        rootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 2, 0)
+
+        game:GetService("VirtualUser"):Button1Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+
+        local abilities = {"Z", "X", "C"}
+        for _, key in pairs(abilities) do
+            game:GetService("VirtualInputManager"):SendKeyEvent(true, key, false, game)
+            wait(0.5)
+        end
+    end
+end
+
+spawn(function()
+    while wait(1) do
+        if _G.AutoFarm then
+            for _, player in ipairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer then
+                    if not _G.SafeZone or not IsInSafeZone() then
+                        AttackPlayer(player)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+spawn(function()
+    while wait(10) do
+        if _G.AutoGacha then
+            game:GetService("ReplicatedStorage").Remotes:FindFirstChild("Gacha"):InvokeServer()
+        end
+    end
+end)
+
+MainTab:Toggle("Auto Bounty", function(value) _G.AutoFarm = value end)
+MainTab:Toggle("Safe Zone Enabled", function(value) _G.SafeZone = value end)
+MainTab:Toggle("Auto Gacha", function(value) _G.AutoGacha = value end)
+
+local MiniButton = Instance.new("ScreenGui", game.CoreGui)
+local NextPlayerButton = Instance.new("TextButton", MiniButton)
+local NextServerButton = Instance.new("TextButton", MiniButton)
+
+MiniButton.ResetOnSpawn = false
+NextPlayerButton.Text = "Next Player"
+NextServerButton.Text = "Next Server"
+
+NextPlayerButton.Position = UDim2.new(0.5, -50, 0, 5)
+NextServerButton.Position = UDim2.new(0.5, 50, 0, 5)
+
+NextPlayerButton.Size = UDim2.new(0, 100, 0, 25)
+NextServerButton.Size = UDim2.new(0, 100, 0, 25)
+
+NextPlayerButton.MouseButton1Click:Connect(function()
+    _G.AutoFarm = false
+    wait(0.5)
+    _G.AutoFarm = true
+end)
+
+NextServerButton.MouseButton1Click:Connect(function()
+    game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+end)
+
+print("✅ Script Loaded Successfully!")
